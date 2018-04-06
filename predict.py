@@ -83,7 +83,7 @@ dense_out = Dense(32, activation='sigmoid')(c_input)
 #Word features input. The shape of the input is given by the sequence lengg
 w_input = Input(shape=(len(sequences[0]), dict_size+1) , name='word_features')
 #An LSTM reads the sequence and outpus a vector of dimension 32, the same dimension of the state given by the continuous features.
-lstm_out = SimpleRNN(32) (w_input)
+lstm_out = LSTM(32) (w_input)
 
 #The two states are concatenated and combined via a dense layer with the same dimensionality.
 hidden = concatenate([dense_out, lstm_out])
@@ -101,12 +101,17 @@ model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accurac
 #Definition of Cross-fold validation. It shuffles and splits the data into 10 chunks.
 kfold = StratifiedKFold(n_splits=10, shuffle=True)
 
+#keeping random initialization
+Wsave = model.get_weights()
+
 cvscores = []
 #Kfold generated a set of indexed corresponding to the i-fold for training and for testing.
 for train, test in kfold.split(X[0], Y):
+	
+	model.set_weights(Wsave)
 	#Training the model with the i-fold. The [X[0][train],X[1][train]] is needed because Keras expects an array of inputs. 
 	#Since there are 2 inputs, the subarrays are getted, and the array of inputs is recreated
-	model.fit([X[0][train],X[1][train]], Y[train], epochs=10,  batch_size=128, verbose=0)
+	model.fit([X[0][train],X[1][train]], Y[train], epochs=10,  batch_size=128)
 	#Evaluation. Checks the predicted output given the model with the actual binary feature value.
 	scores = model.evaluate([X[0][test],X[1][test]], Y[test], verbose=0)
 	#Prints the value
